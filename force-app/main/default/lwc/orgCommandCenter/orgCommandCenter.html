@@ -7,7 +7,13 @@
                 <h1 class="header-title">Admin Command Center</h1>
                 <p class="header-subtitle">System Overview • Production</p>
             </div>
-            <div class="slds-col slds-var-p-right_medium">
+            <div class="slds-col slds-var-p-right_medium slds-grid slds-grid_vertical-align-center">
+                <!-- Trust Status Badge (Moved to Header) -->
+                <div class="slds-m-right_large slds-grid slds-grid_vertical-align-center">
+                    <span class="slds-text-heading_small slds-m-right_small" style="font-weight:700; color:#334155;">{trustData.instance}</span>
+                    <span class={trustStatusClass}>{trustData.status}</span>
+                </div>
+
                 <lightning-button-icon icon-name="utility:refresh" alternative-text="Refresh" onclick={handleRefresh} variant="border-filled"></lightning-button-icon>
             </div>
         </div>
@@ -15,44 +21,6 @@
         <!-- KPI Grid -->
         <div class="slds-grid slds-wrap slds-gutters slds-var-p-horizontal_medium slds-var-m-bottom_large">
             
-            <!-- Trust Widget (Gradient Card) -->
-            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-4 slds-var-m-bottom_medium">
-                <div class="card trust-card">
-                    <div class="trust-content">
-                        <div class="slds-grid slds-grid_align-spread">
-                            <div>
-                                <h3 class="trust-label">PLATFORM STATUS</h3>
-                                <div class="trust-value-group">
-                                    <span class="trust-instance">{trustData.instance}</span>
-                                    <!-- The class here (trustStatusClass) will now trigger the CSS pulse -->
-                                    <span class={trustStatusClass}>{trustData.status}</span>
-                                </div>
-                            </div>
-                            <lightning-icon icon-name={trustIconName} variant="inverse" size="medium"></lightning-icon>
-                        </div>
-                        
-                        <!-- Upcoming Maintenance Block -->
-                        <template if:true={trustData.nextMaintenance}>
-                            <div class="maintenance-box slds-var-m-top_medium">
-                                <p class="maint-label">Upcoming Maintenance</p>
-                                <p class="maint-title">{trustData.nextMaintenance.title}</p>
-                                <p class="maint-date">{trustData.nextMaintenance.dateStr}</p>
-                            </div>
-                        </template>
-
-                        <!-- Next Major Release Block (Restored) -->
-                        <template if:true={trustData.nextReleaseDate}>
-                            <div class="maintenance-box slds-var-m-top_small" style="background: rgba(255,255,255,0.2);">
-                                <p class="maint-label" style="color: #fff;">Next Major Release</p>
-                                <!-- Uses the release name if available, otherwise static text -->
-                                <p class="maint-title">{trustData.nextReleaseName}</p>
-                                <p class="maint-date">{trustData.nextReleaseDate}</p>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
             <!-- Limit Gauges -->
             <template for:each={limits} for:item="limit">
                 <div key={limit.key} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-4 slds-var-m-bottom_medium">
