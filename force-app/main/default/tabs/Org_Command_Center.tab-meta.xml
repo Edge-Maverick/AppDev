@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Admin Dashboard for Org Health</description>
+    <flexiPage>Org_Command_Center_Page</flexiPage>
+    <label>Command Center</label>
+    <motif>Custom101: TV Widescreen</motif>
+</CustomTab>

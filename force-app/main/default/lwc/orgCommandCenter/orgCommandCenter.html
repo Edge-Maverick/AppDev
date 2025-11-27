@@ -1,0 +1,132 @@
+<template>
+    <div class="dashboard-container">
+        
+        <!-- Header -->
+        <div class="header slds-grid slds-grid_align-spread slds-p-vertical_medium">
+            <div class="slds-col slds-var-p-left_medium">
+                <h1 class="header-title">Admin Command Center</h1>
+                <p class="header-subtitle">System Overview • Production</p>
+            </div>
+            <div class="slds-col slds-var-p-right_medium">
+                <lightning-button-icon icon-name="utility:refresh" alternative-text="Refresh" onclick={handleRefresh} variant="border-filled"></lightning-button-icon>
+            </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="slds-grid slds-wrap slds-gutters slds-var-p-horizontal_medium slds-var-m-bottom_large">
+            
+            <!-- Trust Widget (Gradient Card) -->
+            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-4 slds-var-m-bottom_medium">
+                <div class="card trust-card">
+                    <div class="trust-content">
+                        <div class="slds-grid slds-grid_align-spread">
+                            <div>
+                                <h3 class="trust-label">PLATFORM STATUS</h3>
+                                <div class="trust-value-group">
+                                    <span class="trust-instance">{trustData.instance}</span>
+                                    <!-- The class here (trustStatusClass) will now trigger the CSS pulse -->
+                                    <span class={trustStatusClass}>{trustData.status}</span>
+                                </div>
+                            </div>
+                            <lightning-icon icon-name={trustIconName} variant="inverse" size="medium"></lightning-icon>
+                        </div>
+                        
+                        <!-- Upcoming Maintenance Block -->
+                        <template if:true={trustData.nextMaintenance}>
+                            <div class="maintenance-box slds-var-m-top_medium">
+                                <p class="maint-label">Upcoming Maintenance</p>
+                                <p class="maint-title">{trustData.nextMaintenance.title}</p>
+                                <p class="maint-date">{trustData.nextMaintenance.dateStr}</p>
+                            </div>
+                        </template>
+
+                        <!-- Next Major Release Block (Restored) -->
+                        <template if:true={trustData.nextReleaseDate}>
+                            <div class="maintenance-box slds-var-m-top_small" style="background: rgba(255,255,255,0.2);">
+                                <p class="maint-label" style="color: #fff;">Next Major Release</p>
+                                <!-- Uses the release name if available, otherwise static text -->
+                                <p class="maint-title">{trustData.nextReleaseName}</p>
+                                <p class="maint-date">{trustData.nextReleaseDate}</p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Limit Gauges -->
+            <template for:each={limits} for:item="limit">
+                <div key={limit.key} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-4 slds-var-m-bottom_medium">
+                    <div class="card kpi-card">
+                        <div class="kpi-header">
+                            <h3 class="kpi-label">{limit.label}</h3>
+                        </div>
+                        <div class="kpi-body slds-grid slds-grid_vertical-align-center">
+                            <div class="kpi-text">
+                                <p class="kpi-value">{limit.displayUsed}</p>
+                                <p class="kpi-total">of {limit.displayTotal}</p>
+                            </div>
+                            <!-- Circular Progress SVG -->
+                            <div class="progress-ring-container">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle class="progress-ring__circle-bg" stroke="#e2e8f0" stroke-width="6" fill="transparent" r="32" cx="40" cy="40"/>
+                                    <circle class="progress-ring__circle" stroke={limit.color} stroke-width="6" fill="transparent" r="32" cx="40" cy="40"
+                                            stroke-dasharray={limit.circumference} stroke-dashoffset={limit.offset} />
+                                </svg>
+                                <span class="progress-text">{limit.percent}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="slds-grid slds-wrap slds-gutters slds-var-p-horizontal_medium">
+            
+            <!-- Failed Jobs Table -->
+            <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-3 slds-var-m-bottom_medium">
+                <div class="card content-card">
+                    <div class="card-header slds-grid slds-grid_align-spread">
+                        <h2 class="card-title">Recent Failed Jobs</h2>
+                        <lightning-button label="View All" variant="base" class="view-all-btn"></lightning-button>
+                    </div>
+                    <div class="table-container">
+                        <template if:true={failedJobs}>
+                            <lightning-datatable
+                                key-field="Id"
+                                data={failedJobs}
+                                columns={jobColumns}
+                                hide-checkbox-column>
+                            </lightning-datatable>
+                        </template>
+                        <template if:false={failedJobs}>
+                            <div class="slds-p-around_medium slds-text-align_center text-gray">No failed jobs found. High five!</div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- License Usage -->
+            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-3 slds-var-m-bottom_medium">
+                <div class="card content-card">
+                    <div class="card-header">
+                        <h2 class="card-title">License Usage</h2>
+                    </div>
+                    <div class="slds-p-around_medium">
+                        <template for:each={licenses} for:item="lic">
+                            <div key={lic.Id} class="license-item slds-var-m-bottom_medium">
+                                <div class="slds-grid slds-grid_align-spread slds-var-m-bottom_xx-small">
+                                    <span class="license-name">{lic.Name}</span>
+                                    <span class="license-stats"><strong>{lic.UsedLicenses}</strong> / {lic.TotalLicenses}</span>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class={lic.barClass} style={lic.styleWidth}></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
