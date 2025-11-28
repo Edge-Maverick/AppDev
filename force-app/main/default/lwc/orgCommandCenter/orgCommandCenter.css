@@ -20,6 +20,20 @@
     font-weight: 600;
 }
 
+/* Trust Clickable Area */
+.trust-clickable {
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+}
+.trust-clickable:hover {
+    background-color: #e2e8f0;
+}
+.info-icon {
+    --slds-c-icon-color-foreground-default: #94a3b8;
+}
+
 /* Cards (The "Pop" Factor) */
 .card {
     background: white;
@@ -41,31 +55,6 @@
     font-weight: 700;
     font-size: 1rem;
     color: #334155;
-}
-
-/* Trust Widget (Gradient) */
-.trust-card {
-    background: linear-gradient(135deg, #312e81 0%, #0f172a 100%);
-    color: white;
-    border: none;
-    position: relative;
-    overflow: hidden;
-}
-.trust-content {
-    position: relative;
-    z-index: 2;
-    padding: 1.5rem;
-}
-.trust-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: #818cf8; /* Indigo-400 */
-}
-.trust-instance {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-right: 0.75rem;
 }
 
 /* --- PULSE ANIMATIONS --- */
@@ -92,25 +81,16 @@
 
 .status-ok { 
     background: rgba(34, 197, 94, 0.2); 
-    color: #4ade80; 
-    animation: pulse-green 2s infinite; /* Added Pulse */
+    color: #4ade80; /* Green-400 */
+    border-color: rgba(34, 197, 94, 0.3);
+    animation: pulse-green 2s infinite; 
 }
-
 .status-issue { 
     background: rgba(239, 68, 68, 0.2); 
-    color: #fca5a5; 
-    animation: pulse-red 2s infinite; /* Added Pulse */
+    color: #f87171; /* Red-400 */
+    border-color: rgba(239, 68, 68, 0.3);
+    animation: pulse-red 2s infinite; 
 }
-
-.maintenance-box {
-    background: rgba(255,255,255,0.1);
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-.maint-label { font-size: 0.7rem; color: #a5b4fc; }
-.maint-title { font-weight: 600; font-size: 0.9rem; }
-.maint-date { font-size: 0.8rem; opacity: 0.8; }
 
 /* KPI Cards */
 .kpi-card { padding: 1.5rem; }
@@ -171,3 +151,185 @@
 
 /* DataTable Overrides */
 .view-all-btn { color: #3b82f6; }
+
+/* --- DRAWER STYLES --- */
+.drawer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 9000;
+    backdrop-filter: blur(2px);
+}
+
+.drawer-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 400px; /* Drawer width */
+    max-width: 90%;
+    height: 100%;
+    background: white;
+    z-index: 9001;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.slide-in-right {
+    animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+.slide-in-top {
+    animation: slideInTop 0.2s ease-out forwards;
+}
+
+@keyframes slideInTop {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.drawer-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Collapsible Headers (Shared) */
+.collapsible-header {
+    cursor: pointer;
+    user-select: none;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+
+.collapsible-header:hover {
+    background-color: #f1f5f9;
+}
+
+.chevron-icon {
+    --slds-c-icon-color-foreground-default: #64748b;
+}
+
+/* Resolved Incidents */
+.resolved-box {
+    border-left: 4px solid #94a3b8; /* Slate-400 */
+    background-color: #f8fafc;
+}
+.resolved-marker {
+    background-color: #cbd5e1 !important; /* Muted color for history */
+    border-color: #94a3b8 !important;
+}
+
+/* Drawer Service List */
+.service-row {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.service-row:last-child { border-bottom: none; }
+.row-issue { background-color: #fef2f2; } /* Light Red BG */
+
+.service-name {
+    font-size: 0.875rem;
+    color: #334155;
+    font-weight: 500;
+}
+.service-status {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* --- VERTICAL TIMELINE STYLES --- */
+.timeline {
+    border-left: 2px solid #e2e8f0; /* The vertical line */
+    margin-left: 0.5rem;
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.95rem; /* Centers marker on the left border */
+    top: 0.1rem;
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    background-color: #fff;
+    border: 2px solid #cbd5e1;
+    z-index: 1;
+}
+
+/* Highlight the first marker (latest event) */
+.timeline-item:first-child .timeline-marker {
+    border-color: #ef4444; 
+    background-color: #fef2f2;
+}
+
+.timeline-date {
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+}
+
+.timeline-message {
+    font-size: 0.85rem;
+    color: #334155;
+    line-height: 1.4;
+}
+
+/* --- TRUST HERO STATE (All Systems OK) --- */
+.trust-hero {
+    background: linear-gradient(135deg, #ecfccb 0%, #dcfce7 100%); /* Lime-100 to Green-100 */
+    border-radius: 1rem;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: #166534; /* Green-800 */
+    border: 1px solid #bbf7d0;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.trust-hero-icon {
+    --slds-c-icon-color-foreground-default: #15803d; /* Green-700 */
+    transform: scale(1.5);
+    margin-bottom: 1rem;
+}
+
+.trust-hero-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #14532d; /* Green-900 */
+}
+
+.trust-hero-subtitle {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    color: #15803d;
+}

@@ -2,7 +2,6 @@ import { LightningElement, wire, track } from 'lwc';
 import getOrgLimits from '@salesforce/apex/OrgHealthController.getOrgLimits';
 import getLicenseUsage from '@salesforce/apex/OrgHealthController.getLicenseUsage';
 import getFailedJobs from '@salesforce/apex/OrgHealthController.getFailedJobs';
-// UPDATED: Importing from the main controller now
 import getTrustStatus from '@salesforce/apex/OrgHealthController.getTrustStatus';
 import { refreshApex } from '@salesforce/apex';
 
@@ -16,22 +15,31 @@ const JOB_COLUMNS = [
 
 export default class OrgCommandCenter extends LightningElement {
     
-    // Tracked Data
-    // Updated to include nextReleaseDate
     @track limits = [];
     @track licenses = [];
     @track trustData = { 
         instance: '...', 
-        status: 'Loading...', 
-        incidents: [], 
+        status: 'Loading...',
+        location: '',
+        releaseVersion: '', 
+        incidents: [],
+        resolvedIncidents: [], 
+        services: [], 
         nextMaintenance: null,
         nextReleaseDate: null 
     };
     
+    // Drawer State
+    @track isDrawerOpen = false;
+    @track isServiceHealthExpanded = false; 
+    @track isResolvedIncidentsExpanded = false; 
+    @track formattedServices = [];
+    @track hasIncidents = false;
+    @track hasResolvedIncidents = false; 
+
     failedJobs;
     jobColumns = JOB_COLUMNS;
     
-    // Wiring
     wiredLimitsResult;
     wiredLicensesResult;
     wiredJobsResult;
@@ -39,17 +47,13 @@ export default class OrgCommandCenter extends LightningElement {
     @wire(getOrgLimits)
     wiredLimits(result) {
         this.wiredLimitsResult = result;
-        if (result.data) {
-            this.processLimits(result.data);
-        }
+        if (result.data) this.processLimits(result.data);
     }
 
     @wire(getLicenseUsage)
     wiredLicenses(result) {
         this.wiredLicensesResult = result;
-        if (result.data) {
-            this.processLicenses(result.data);
-        }
+        if (result.data) this.processLicenses(result.data);
     }
 
     @wire(getFailedJobs)
@@ -67,11 +71,12 @@ export default class OrgCommandCenter extends LightningElement {
         this.loadTrustData();
     }
 
-    // Explicit Call for Trust Data
     loadTrustData() {
         getTrustStatus()
             .then(data => {
-                this.trustData = data;
+                const safeData = JSON.parse(JSON.stringify(data));
+                this.trustData = safeData;
+                this.processTrustDetails(safeData);
             })
             .catch(error => {
                 console.error('Trust Load Error', error);
@@ -84,6 +89,104 @@ export default class OrgCommandCenter extends LightningElement {
         refreshApex(this.wiredLicensesResult);
         refreshApex(this.wiredJobsResult);
         this.loadTrustData();
+    }
+
+    // --- Drawer Logic ---
+
+    openDrawer() {
+        this.isDrawerOpen = true;
+    }
+
+    closeDrawer() {
+        this.isDrawerOpen = false;
+        this.isServiceHealthExpanded = false;
+        this.isResolvedIncidentsExpanded = false; 
+    }
+
+    toggleServiceHealth() {
+        this.isServiceHealthExpanded = !this.isServiceHealthExpanded;
+    }
+    
+    toggleResolvedIncidents() {
+        this.isResolvedIncidentsExpanded = !this.isResolvedIncidentsExpanded;
+    }
+
+    get serviceHealthIcon() {
+        return this.isServiceHealthExpanded ? 'utility:chevronup' : 'utility:chevrondown';
+    }
+
+    get resolvedIncidentsIcon() {
+        return this.isResolvedIncidentsExpanded ? 'utility:chevronup' : 'utility:chevrondown';
+    }
+
+    processTrustDetails(data) {
+        // Process Services for Display
+        if (data.services) {
+            this.formattedServices = data.services.map(svc => {
+                const currentStatus = svc.status || 'OK'; 
+                const isHealthy = currentStatus === 'OK' || currentStatus === 'Available';
+                
+                return {
+                    key: svc.key || svc.name, 
+                    name: svc.key || svc.name,
+                    status: currentStatus,
+                    iconName: isHealthy ? 'utility:check' : 'utility:warning',
+                    iconVariant: isHealthy ? 'success' : 'error',
+                    rowClass: isHealthy ? 'service-row' : 'service-row row-issue'
+                };
+            });
+        }
+
+        const rawIncidents = data.incidents || [];
+        
+        // Filter Active Incidents
+        const activeIncidents = rawIncidents.filter(inc => {
+            const status = (inc.status || '').toUpperCase();
+            return status !== 'RESOLVED' && status !== 'COMPLETED';
+        });
+
+        // Filter Resolved Incidents
+        const resolvedIncidents = rawIncidents.filter(inc => {
+            const status = (inc.status || '').toUpperCase();
+            return status === 'RESOLVED' || status === 'COMPLETED';
+        });
+
+        // Process Data using the helper
+        this.trustData.incidents = this._formatIncidents(activeIncidents);
+        this.hasIncidents = this.trustData.incidents.length > 0;
+
+        this.trustData.resolvedIncidents = this._formatIncidents(resolvedIncidents);
+        this.hasResolvedIncidents = this.trustData.resolvedIncidents.length > 0;
+    }
+
+    // --- Private Helper for formatting incident lists ---
+    _formatIncidents(incidentsList) {
+        return incidentsList.map(inc => {
+            let formattedEvents = [];
+            if (inc.IncidentEvents && Array.isArray(inc.IncidentEvents)) {
+                formattedEvents = inc.IncidentEvents.map(evt => {
+                    let dateStr = evt.createdDate || evt.createdAt || '';
+                    let rawDate = dateStr ? new Date(dateStr) : new Date();
+                    try {
+                        if(dateStr) dateStr = rawDate.toLocaleString();
+                    } catch(e){ /* ignore */ }
+                    return {
+                        ...evt,
+                        displayDate: dateStr,
+                        rawDate: rawDate
+                    };
+                });
+                formattedEvents.sort((a, b) => b.rawDate - a.rawDate);
+            }
+
+            // FIX: Check if message is an object (e.g., localized) and hide it if so
+            let cleanMessage = inc.message;
+            if (cleanMessage && typeof cleanMessage === 'object') {
+                cleanMessage = null;
+            }
+
+            return { ...inc, message: cleanMessage, formattedEvents };
+        });
     }
 
     // --- Helpers ---
@@ -104,14 +207,7 @@ export default class OrgCommandCenter extends LightningElement {
             const displayTotal = val.total > 1000 ? (val.total/1000).toFixed(1) + 'k' : val.total;
 
             return {
-                key, 
-                ...val, 
-                percent, 
-                color,
-                circumference, 
-                offset,
-                displayUsed, 
-                displayTotal
+                key, ...val, percent, color, circumference, offset, displayUsed, displayTotal
             };
         });
     }
@@ -135,9 +231,5 @@ export default class OrgCommandCenter extends LightningElement {
     get trustStatusClass() {
         if (this.trustData.status === 'OK') return 'status-badge status-ok';
         return 'status-badge status-issue';
-    }
-
-    get trustIconName() {
-        return this.trustData.status === 'OK' ? 'utility:check' : 'utility:warning';
     }
 }

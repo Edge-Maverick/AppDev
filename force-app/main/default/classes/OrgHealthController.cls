@@ -4,10 +4,13 @@ public with sharing class OrgHealthController {
     public class TrustViewModel {
         @AuraEnabled public String instance;
         @AuraEnabled public String status; // 'OK', 'MAJOR', 'MINOR'
+        @AuraEnabled public String location; // e.g., 'NA', 'EU'
+        @AuraEnabled public String releaseVersion; // e.g., 'Summer '24 Patch 12.3'
         @AuraEnabled public List<Object> incidents;
+        @AuraEnabled public List<Object> services; // Sub-service statuses
         @AuraEnabled public MaintenanceInfo nextMaintenance;
-        @AuraEnabled public String nextReleaseDate; // Added for Major Release tracking
-        @AuraEnabled public String nextReleaseName; // Added for Major Release Name
+        @AuraEnabled public String nextReleaseDate; 
+        @AuraEnabled public String nextReleaseName;
     }
 
     public class MaintenanceInfo {
@@ -22,8 +25,12 @@ public with sharing class OrgHealthController {
         
         try {
             // 1. Get Instance (Fallback to NA1 if undefined)
-            String instance = [SELECT InstanceName FROM Organization LIMIT 1].InstanceName;
-            if (String.isBlank(instance)) instance = 'NA1'; 
+            // SECURITY: Used WITH SECURITY_ENFORCED (Compatible replacement for USER_MODE)
+            String instance = 'NA1';
+            List<Organization> orgs = [SELECT InstanceName FROM Organization WITH SECURITY_ENFORCED LIMIT 1];
+            if (!orgs.isEmpty() && String.isNotBlank(orgs[0].InstanceName)) {
+                instance = orgs[0].InstanceName;
+            }
             model.instance = instance;
 
             Http http = new Http();
@@ -37,18 +44,21 @@ public with sharing class OrgHealthController {
             if (statusRes.getStatusCode() == 200) {
                 Map<String, Object> statusBody = (Map<String, Object>) JSON.deserializeUntyped(statusRes.getBody());
                 model.status = (String) statusBody.get('status');
+                model.location = (String) statusBody.get('location');
+                model.releaseVersion = (String) statusBody.get('releaseVersion');
                 model.incidents = (List<Object>) statusBody.get('Incidents');
+                model.services = (List<Object>) statusBody.get('Services');
             }
 
             // 3. Fetch Maintenance (Using the search endpoint to get deeper list for Major releases)
             HttpRequest maintReq = new HttpRequest();
-            // Updated endpoint to use /v1/maintenances?instance=... with higher limit as requested
+            // Updated endpoint to use /v1/maintenances?instance=... with higher limit
             maintReq.setEndpoint('https://api.status.salesforce.com/v1/maintenances?instance=' + instance + '&limit=1000&offset=0');
             maintReq.setMethod('GET');
             HttpResponse maintRes = http.send(maintReq);
 
             if (maintRes.getStatusCode() == 200) {
-                // This endpoint returns a List<Object> directly, not a Map with "Maintenances" key
+                // This endpoint returns a List<Object> directly
                 List<Object> maintenances = (List<Object>) JSON.deserializeUntyped(maintRes.getBody());
                 
                 if (maintenances != null && !maintenances.isEmpty()) {
@@ -89,7 +99,6 @@ public with sharing class OrgHealthController {
 
     @AuraEnabled(cacheable=true)
     public static Map<String, Object> getOrgLimits() {
-        // Fixed: Use getMap() instead of getAll() to match return type
         Map<String, System.OrgLimit> limits = OrgLimits.getMap();
         Map<String, Object> result = new Map<String, Object>();
         
@@ -115,17 +124,21 @@ public with sharing class OrgHealthController {
 
     @AuraEnabled(cacheable=true)
     public static List<UserLicense> getLicenseUsage() {
+        // SECURITY: Added WITH SECURITY_ENFORCED (Placed before ORDER BY)
         return [SELECT Name, TotalLicenses, UsedLicenses, Status 
                 FROM UserLicense 
                 WHERE TotalLicenses > 0 AND Status = 'Active'
+                WITH SECURITY_ENFORCED
                 ORDER BY UsedLicenses DESC];
     }
     
     @AuraEnabled(cacheable=true)
     public static List<AsyncApexJob> getFailedJobs() {
+        // SECURITY: Added WITH SECURITY_ENFORCED (Placed before ORDER BY/LIMIT)
         return [SELECT Id, ApexClass.Name, ExtendedStatus, CreatedDate, CreatedBy.Name, JobType 
                 FROM AsyncApexJob 
                 WHERE Status = 'Failed' 
+                WITH SECURITY_ENFORCED
                 ORDER BY CreatedDate DESC LIMIT 10];
     }
 }
