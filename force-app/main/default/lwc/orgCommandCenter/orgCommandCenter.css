@@ -34,6 +34,24 @@
     --slds-c-icon-color-foreground-default: #94a3b8;
 }
 
+/* Alert Banner */
+.maintenance-alert {
+    background-color: #fffbeb; /* Amber-50 */
+    border: 1px solid #fcd34d; /* Amber-300 */
+    color: #92400e; /* Amber-800 */
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.alert-text {
+    margin-right: 1rem;
+}
+
 /* Cards (The "Pop" Factor) */
 .card {
     background: white;
@@ -302,23 +320,53 @@
 
 /* --- TRUST HERO STATE (All Systems OK) --- */
 .trust-hero {
-    background: linear-gradient(135deg, #ecfccb 0%, #dcfce7 100%); /* Lime-100 to Green-100 */
-    border-radius: 1rem;
+    /* Soft Radial Gradient for modernity */
+    background: radial-gradient(circle at 50% 0%, #ffffff 0%, #dcfce7 100%);
+    
+    /* Modern shadow */
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    
+    /* Removed border */
+    border: none;
+    
+    /* Increased border radius */
+    border-radius: 1.5rem;
+    
     padding: 3rem 1.5rem;
     text-align: center;
     color: #166534; /* Green-800 */
-    border: 1px solid #bbf7d0;
     margin-bottom: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    
+    /* Micro-interaction: Lift on hover */
+    transition: transform 0.3s ease;
 }
 
-.trust-hero-icon {
-    --slds-c-icon-color-foreground-default: #15803d; /* Green-700 */
-    transform: scale(1.5);
+.trust-hero:hover {
+    transform: translateY(-2px);
+}
+
+.trust-hero-illustration-container {
+    width: 120px;
+    height: 120px;
     margin-bottom: 1rem;
+}
+
+.trust-hero-svg {
+    width: 100%;
+    height: 100%;
+    
+    /* Micro-interaction: Pop-in animation */
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    transform-origin: center;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .trust-hero-title {
@@ -332,4 +380,10 @@
     font-size: 0.9rem;
     opacity: 0.8;
     color: #15803d;
+}
+
+.trust-hero-timestamp {
+    color: #15803d;
+    opacity: 0.7;
+    font-style: italic;
 }

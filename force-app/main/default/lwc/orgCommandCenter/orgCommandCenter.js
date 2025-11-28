@@ -1,27 +1,18 @@
 import { LightningElement, wire, track } from 'lwc';
 import getOrgLimits from '@salesforce/apex/OrgHealthController.getOrgLimits';
-import getLicenseUsage from '@salesforce/apex/OrgHealthController.getLicenseUsage';
-import getFailedJobs from '@salesforce/apex/OrgHealthController.getFailedJobs';
 import getTrustStatus from '@salesforce/apex/OrgHealthController.getTrustStatus';
 import { refreshApex } from '@salesforce/apex';
-
-const JOB_COLUMNS = [
-    { label: 'Job Type', fieldName: 'JobType', type: 'text', initialWidth: 120 },
-    { label: 'Class', fieldName: 'ApexClassName', type: 'text' }, 
-    { label: 'Error', fieldName: 'ExtendedStatus', type: 'text', wrapText: true },
-    { label: 'Date', fieldName: 'CreatedDate', type: 'date', 
-      typeAttributes: { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' } }
-];
 
 export default class OrgCommandCenter extends LightningElement {
     
     @track limits = [];
-    @track licenses = [];
+    // licenses removed
     @track trustData = { 
         instance: '...', 
         status: 'Loading...',
         location: '',
         releaseVersion: '', 
+        apiVersion: '', 
         incidents: [],
         resolvedIncidents: [], 
         services: [], 
@@ -29,20 +20,19 @@ export default class OrgCommandCenter extends LightningElement {
         nextReleaseDate: null 
     };
     
-    // Drawer State
+    // UI State
     @track isDrawerOpen = false;
     @track isServiceHealthExpanded = false; 
     @track isResolvedIncidentsExpanded = false; 
     @track formattedServices = [];
     @track hasIncidents = false;
     @track hasResolvedIncidents = false; 
+    @track showMaintenanceAlert = false; 
 
-    failedJobs;
-    jobColumns = JOB_COLUMNS;
+    // failedJobs & jobColumns removed
     
     wiredLimitsResult;
-    wiredLicensesResult;
-    wiredJobsResult;
+    // wiredLicensesResult & wiredJobsResult removed
 
     @wire(getOrgLimits)
     wiredLimits(result) {
@@ -50,22 +40,7 @@ export default class OrgCommandCenter extends LightningElement {
         if (result.data) this.processLimits(result.data);
     }
 
-    @wire(getLicenseUsage)
-    wiredLicenses(result) {
-        this.wiredLicensesResult = result;
-        if (result.data) this.processLicenses(result.data);
-    }
-
-    @wire(getFailedJobs)
-    wiredJobs(result) {
-        this.wiredJobsResult = result;
-        if (result.data) {
-            this.failedJobs = result.data.map(job => ({
-                ...job,
-                ApexClassName: job.ApexClass ? job.ApexClass.Name : 'Anonymous'
-            }));
-        }
-    }
+    // wiredLicenses & wiredJobs removed
 
     connectedCallback() {
         this.loadTrustData();
@@ -86,9 +61,13 @@ export default class OrgCommandCenter extends LightningElement {
 
     handleRefresh() {
         refreshApex(this.wiredLimitsResult);
-        refreshApex(this.wiredLicensesResult);
-        refreshApex(this.wiredJobsResult);
+        // refreshApex for licenses & jobs removed
         this.loadTrustData();
+    }
+
+    // --- Alert Logic ---
+    closeAlert() {
+        this.showMaintenanceAlert = false;
     }
 
     // --- Drawer Logic ---
@@ -120,12 +99,11 @@ export default class OrgCommandCenter extends LightningElement {
     }
 
     processTrustDetails(data) {
-        // Process Services for Display
+        // 1. Process Services
         if (data.services) {
             this.formattedServices = data.services.map(svc => {
                 const currentStatus = svc.status || 'OK'; 
                 const isHealthy = currentStatus === 'OK' || currentStatus === 'Available';
-                
                 return {
                     key: svc.key || svc.name, 
                     name: svc.key || svc.name,
@@ -137,21 +115,26 @@ export default class OrgCommandCenter extends LightningElement {
             });
         }
 
+        // 2. Maintenance Alert Check
+        if (data.nextMaintenance && data.nextMaintenance.isUrgent === true) {
+            this.showMaintenanceAlert = true;
+        } else {
+            this.showMaintenanceAlert = false;
+        }
+
+        // 3. Process Incidents
         const rawIncidents = data.incidents || [];
         
-        // Filter Active Incidents
         const activeIncidents = rawIncidents.filter(inc => {
             const status = (inc.status || '').toUpperCase();
             return status !== 'RESOLVED' && status !== 'COMPLETED';
         });
 
-        // Filter Resolved Incidents
         const resolvedIncidents = rawIncidents.filter(inc => {
             const status = (inc.status || '').toUpperCase();
             return status === 'RESOLVED' || status === 'COMPLETED';
         });
 
-        // Process Data using the helper
         this.trustData.incidents = this._formatIncidents(activeIncidents);
         this.hasIncidents = this.trustData.incidents.length > 0;
 
@@ -159,9 +142,8 @@ export default class OrgCommandCenter extends LightningElement {
         this.hasResolvedIncidents = this.trustData.resolvedIncidents.length > 0;
     }
 
-    // --- Private Helper for formatting incident lists ---
     _formatIncidents(incidentsList) {
-        return incidentsList.map(inc => {
+        const processed = incidentsList.map(inc => {
             let formattedEvents = [];
             if (inc.IncidentEvents && Array.isArray(inc.IncidentEvents)) {
                 formattedEvents = inc.IncidentEvents.map(evt => {
@@ -176,10 +158,10 @@ export default class OrgCommandCenter extends LightningElement {
                         rawDate: rawDate
                     };
                 });
+                // Sort events new to old
                 formattedEvents.sort((a, b) => b.rawDate - a.rawDate);
             }
 
-            // FIX: Check if message is an object (e.g., localized) and hide it if so
             let cleanMessage = inc.message;
             if (cleanMessage && typeof cleanMessage === 'object') {
                 cleanMessage = null;
@@ -187,6 +169,15 @@ export default class OrgCommandCenter extends LightningElement {
 
             return { ...inc, message: cleanMessage, formattedEvents };
         });
+
+        // Sort incidents by their latest event date (Descending)
+        processed.sort((a, b) => {
+            const dateA = (a.formattedEvents && a.formattedEvents.length > 0) ? a.formattedEvents[0].rawDate : new Date(0);
+            const dateB = (b.formattedEvents && b.formattedEvents.length > 0) ? b.formattedEvents[0].rawDate : new Date(0);
+            return dateB - dateA;
+        });
+
+        return processed;
     }
 
     // --- Helpers ---
@@ -212,21 +203,7 @@ export default class OrgCommandCenter extends LightningElement {
         });
     }
 
-    processLicenses(data) {
-        this.licenses = data.map(lic => {
-            const percent = (lic.UsedLicenses / lic.TotalLicenses) * 100;
-            let barClass = 'progress-bar-fill';
-            if (percent > 95) barClass += ' bg-critical';
-            else if (percent > 80) barClass += ' bg-warning';
-            else barClass += ' bg-healthy';
-
-            return {
-                ...lic,
-                styleWidth: `width: ${percent}%`,
-                barClass
-            };
-        });
-    }
+    // processLicenses helper removed
 
     get trustStatusClass() {
         if (this.trustData.status === 'OK') return 'status-badge status-ok';

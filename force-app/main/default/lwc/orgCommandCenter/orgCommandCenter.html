@@ -6,6 +6,20 @@
             <div class="slds-col slds-var-p-left_medium">
                 <h1 class="header-title">Admin Command Center</h1>
                 <p class="header-subtitle">System Overview • Production</p>
+                
+                <!-- MAINTENANCE ALERT BANNER -->
+                <template if:true={showMaintenanceAlert}>
+                    <div class="maintenance-alert slds-m-top_small slide-in-top">
+                        <div class="slds-grid slds-grid_vertical-align-center">
+                            <lightning-icon icon-name="utility:warning" size="x-small" variant="warning" class="slds-m-right_small"></lightning-icon>
+                            <span class="alert-text">
+                                <strong>Upcoming Maintenance:</strong> {trustData.nextMaintenance.title} on {trustData.nextMaintenance.dateStr}
+                            </span>
+                        </div>
+                        <lightning-button-icon icon-name="utility:close" variant="bare" size="small" onclick={closeAlert} class="close-alert-btn"></lightning-button-icon>
+                    </div>
+                </template>
+
             </div>
             <div class="slds-col slds-var-p-right_medium slds-grid slds-grid_vertical-align-center">
                 
@@ -47,52 +61,6 @@
             </template>
         </div>
 
-        <!-- Main Content Grid -->
-        <div class="slds-grid slds-wrap slds-gutters slds-var-p-horizontal_medium">
-            <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-3 slds-var-m-bottom_medium">
-                <div class="card content-card">
-                    <div class="card-header slds-grid slds-grid_align-spread">
-                        <h2 class="card-title">Recent Failed Jobs</h2>
-                        <lightning-button label="View All" variant="base" class="view-all-btn"></lightning-button>
-                    </div>
-                    <div class="table-container">
-                        <template if:true={failedJobs}>
-                            <lightning-datatable
-                                key-field="Id"
-                                data={failedJobs}
-                                columns={jobColumns}
-                                hide-checkbox-column>
-                            </lightning-datatable>
-                        </template>
-                        <template if:false={failedJobs}>
-                            <div class="slds-p-around_medium slds-text-align_center text-gray">No failed jobs found. High five!</div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-3 slds-var-m-bottom_medium">
-                <div class="card content-card">
-                    <div class="card-header">
-                        <h2 class="card-title">License Usage</h2>
-                    </div>
-                    <div class="slds-p-around_medium">
-                        <template for:each={licenses} for:item="lic">
-                            <div key={lic.Id} class="license-item slds-var-m-bottom_medium">
-                                <div class="slds-grid slds-grid_align-spread slds-var-m-bottom_xx-small">
-                                    <span class="license-name">{lic.Name}</span>
-                                    <span class="license-stats"><strong>{lic.UsedLicenses}</strong> / {lic.TotalLicenses}</span>
-                                </div>
-                                <div class="progress-bar-bg">
-                                    <div class={lic.barClass} style={lic.styleWidth}></div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- DRAWER / SLIDE-OUT PANEL -->
         <template if:true={isDrawerOpen}>
             <div class="drawer-backdrop" onclick={closeDrawer}></div>
@@ -107,17 +75,38 @@
                 <!-- Drawer Content -->
                 <div class="drawer-content slds-p-around_medium">
                     
-                    <!-- General Info -->
+                    <!-- General Info (Updated to Grid Layout with Consistent Alignment) -->
                     <div class="slds-box slds-theme_shade slds-m-bottom_medium">
-                        <ul class="slds-list_horizontal slds-has-dividers_right slds-text-body_small slds-wrap">
-                            <li class="slds-item">Version: <strong>{trustData.releaseVersion}</strong></li>
-                            <li class="slds-item">Next: <strong>{trustData.nextReleaseName}</strong></li>
-                            <li class="slds-item">Date: <strong>{trustData.nextReleaseDate}</strong></li>
-                            <li class="slds-item">Status: <strong class={trustStatusClass}>{trustData.status}</strong></li>
-                        </ul>
+                        <div class="slds-grid slds-wrap slds-gutters_x-small">
+                            <!-- Release Info (2/3 width) -->
+                            <div class="slds-col slds-size_2-of-3 slds-m-bottom_x-small">
+                                <div class="slds-text-color_weak slds-text-body_small">Version</div>
+                                <div class="slds-text-body_small slds-truncate" title={trustData.releaseVersion}><strong>{trustData.releaseVersion}</strong></div>
+                            </div>
+                            <!-- API Info (1/3 width) -->
+                            <div class="slds-col slds-size_1-of-3 slds-m-bottom_x-small">
+                                <div class="slds-text-color_weak slds-text-body_small">API Level</div>
+                                <div class="slds-text-body_small"><strong>{trustData.apiVersion}</strong></div>
+                            </div>
+                            
+                            <!-- Divider for Upcoming -->
+                            <div class="slds-col slds-size_1-of-1 slds-m-top_x-small slds-border_top slds-p-top_small">
+                                <!-- Nested Grid with consistent widths -->
+                                <div class="slds-grid slds-wrap slds-gutters_x-small">
+                                    <div class="slds-col slds-size_2-of-3">
+                                        <div class="slds-text-color_weak slds-text-body_small">Next Update</div>
+                                        <div class="slds-text-body_small slds-truncate" title={trustData.nextReleaseName}><strong>{trustData.nextReleaseName}</strong></div>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-3">
+                                        <div class="slds-text-color_weak slds-text-body_small">Date</div>
+                                        <div class="slds-text-body_small"><strong>{trustData.nextReleaseDate}</strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Incidents Section -->
+                    <!-- Incident Status -->
                     <div class="slds-text-heading_small slds-m-bottom_small">Incident Status</div>
                     
                     <template if:true={hasIncidents}>
@@ -151,12 +140,22 @@
                         </div>
                     </template>
                     
-                    <!-- NO Incidents Hero State -->
+                    <!-- NO Incidents Hero State (Updated Illustration & Micro-interactions) -->
                     <template if:false={hasIncidents}>
                          <div class="trust-hero">
-                             <lightning-icon icon-name="utility:shield" size="large" class="trust-hero-icon"></lightning-icon>
+                             <!-- Custom SVG Illustration for "Success/Check" -->
+                             <div class="trust-hero-illustration-container">
+                                 <svg class="trust-hero-svg" viewBox="0 0 200 150" aria-hidden="true">
+                                     <path fill="#dcfce7" d="M40.2,149.3c-8.3,0-15.3-6.4-16.1-14.7L18.7,78.2c-0.4-4.2,1.1-8.3,4.2-11.2l43-41c6.1-5.8,15.7-5.8,21.8,0l43,41c3.1,2.9,4.6,7.1,4.2,11.2l-5.4,56.4c-0.8,8.3-7.8,14.7-16.1,14.7H40.2z" />
+                                     <path fill="#22c55e" d="M142.6,96.4c-1.5,0-3-0.6-4.1-1.8l-18.6-18.6c-2.3-2.3-2.3-6,0-8.3s6-2.3,8.3,0l14.5,14.5l35.3-35.3c2.3-2.3,6-2.3,8.3,0s2.3,6,0,8.3l-39.5,39.5C145.6,95.8,144.1,96.4,142.6,96.4z"/>
+                                     <circle fill="#86efac" cx="90" cy="90" r="10" opacity="0.6" />
+                                     <circle fill="#4ade80" cx="160" cy="40" r="5" opacity="0.8" />
+                                     <circle fill="#bbf7d0" cx="30" cy="50" r="8" opacity="0.5" />
+                                 </svg>
+                             </div>
                              <h2 class="trust-hero-title">All Systems Operational</h2>
                              <p class="trust-hero-subtitle">No active incidents reported for your instance.</p>
+                             <p class="trust-hero-timestamp slds-text-body_small slds-m-top_x-small">Last checked: Just now</p>
                         </div>
                     </template>
 
@@ -196,7 +195,6 @@
                             </div>
                         </template>
                     </template>
-
 
                     <!-- Sub-Services List (Collapsible) -->
                     <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small collapsible-header" onclick={toggleServiceHealth}>
