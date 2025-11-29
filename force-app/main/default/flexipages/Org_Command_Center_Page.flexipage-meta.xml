@@ -10,6 +10,7 @@
         <name>main</name>
         <type>Region</type>
     </flexiPageRegions>
+
     <masterLabel>Org Command Center Page</masterLabel>
     <template>
         <name>flexipage:defaultAppHomeTemplate</name>

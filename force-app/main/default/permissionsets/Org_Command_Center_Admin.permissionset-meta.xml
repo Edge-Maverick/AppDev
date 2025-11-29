@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <applicationVisibilities>
+        <application>Admin_Command_Center</application>
+        <visible>true</visible>
+    </applicationVisibilities>
     <classAccesses>
         <apexClass>OrgHealthController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Org Command Center Admin</label>
     <tabSettings>
         <tab>Org_Command_Center</tab>
         <visibility>Visible</visibility>
     </tabSettings>
-    <hasActivationRequired>false</hasActivationRequired>
-    <label>Org Command Center Admin</label>
 </PermissionSet>

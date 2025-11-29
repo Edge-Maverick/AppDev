@@ -1,0 +1,48 @@
+<template>
+    <lightning-card title="Admin Sticky Board" icon-name="standard:note">
+        <div class="slds-p-horizontal_medium">
+            
+            <div class="slds-grid slds-m-bottom_medium">
+                <lightning-input 
+                    class="slds-col slds-size_9-of-12"
+                    placeholder="Type a reminder for the team..."
+                    value={noteInput}
+                    onchange={handleInputChange}
+                    variant="label-hidden">
+                </lightning-input>
+                <lightning-button 
+                    class="slds-col slds-size_3-of-12 slds-p-left_small"
+                    label="Post" 
+                    variant="brand" 
+                    onclick={handleAddNote}>
+                </lightning-button>
+            </div>
+
+            <div class="notes-container slds-grid slds-wrap slds-gutters">
+                <template for:each={notes} for:item="note">
+                    <div key={note.Id} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                        <div class="sticky-note">
+                            <p class="note-content">{note.Note_Content__c}</p>
+                            <div class="note-footer slds-grid slds-grid_align-spread slds-m-top_small">
+                                <span class="note-author">{note.CreatedBy.Name}</span>
+                                <lightning-button-icon 
+                                    icon-name="utility:delete" 
+                                    variant="bare" 
+                                    size="small" 
+                                    data-id={note.Id} 
+                                    onclick={handleDelete}>
+                                </lightning-button-icon>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <template if:false={hasNotes}>
+                <p class="slds-text-align_center slds-text-color_weak slds-p-vertical_medium">
+                    No active notes.
+                </p>
+            </template>
+        </div>
+    </lightning-card>
+</template>

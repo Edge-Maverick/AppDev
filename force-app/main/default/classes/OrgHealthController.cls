@@ -185,4 +185,24 @@ public with sharing class OrgHealthController {
         }
     }
 
+            // --- NEW: Sticky Note Methods ---
+
+    @AuraEnabled
+    public static List<Admin_Note__c> getStickyNotes() {
+        return [SELECT Id, Note_Content__c, CreatedDate, CreatedBy.Name 
+                FROM Admin_Note__c 
+                ORDER BY CreatedDate DESC];
+    }
+
+    @AuraEnabled
+    public static Admin_Note__c saveStickyNote(String content) {
+        Admin_Note__c note = new Admin_Note__c(Note_Content__c = content);
+        insert note;
+        return note;
+    }
+
+    @AuraEnabled
+    public static void deleteStickyNote(String noteId) {
+        delete [SELECT Id FROM Admin_Note__c WHERE Id = :noteId];
+    }
 }
